@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Chat Chatbot</title>
+  <!-- Tailwind CSS CDN -->
+  <link href="./src/output.css" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    input::-webkit-outer-spin-button,
+    input::-webkit-inner-spin-button {
+      /* display: none; <- Crashes Chrome on hover */
+      -webkit-appearance: none;
+      margin: 0;
+      /* <-- Apparently some margin are still there even though it's hidden */
+    }
+
+    input[type=number] {
+      -moz-appearance: textfield;
+      /* Firefox */
+    }
+  </style>
+</head>
+
+<body class="bg-gradient-to-r from-blue-50 to-indigo-100 min-h-screen flex flex-col">
+
+  <!-- Navbar -->
+  <!-- Navbar -->
+  <nav class="bg-white shadow sticky top-0 left-0 w-full z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        <div class="flex-shrink-0 flex items-center">
+          <a href="index.html" class="text-xl font-bold text-indigo-700">Chatbot API</a>
+        </div>
+        <div class="hidden md:flex space-x-8">
+          <a href="index.html" class="text-gray-600 font-semibold hover:text-indigo-500">Deskripsi</a>
+          <a href="chat.html" class="text-gray-600 font-semibold hover:text-indigo-500">Chat</a>
+        </div>
+        <!-- Mobile menu button -->
+        <div class="flex items-center md:hidden">
+          <button id="mobile-menu-button"
+            class="text-gray-700 hover:text-indigo-500 focus:outline-none focus:text-indigo-500">
+            <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+              stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mobile Menu -->
+    <div id="mobile-menu" class="hidden md:hidden">
+      <a href="index.html" class="block px-4 py-2 text-gray-600 hover:bg-indigo-50">Deskripsi</a>
+      <a href="chat.html" class="block px-4 py-2 text-gray-600 hover:bg-indigo-50">Chat</a>
+    </div>
+  </nav>
+
+
+  <!-- Main Content -->
+  <main class="flex-grow container mx-auto px-4 py-8 max-w-xl">
+    <div class="bg-white rounded-2xl shadow-2xl p-8">
+      <form action="POST" class="space-y-6">
+
+        <!-- Input Nomor Telepon -->
+        <div>
+          <label for="nomor" class="block text-indigo-700 font-semibold mb-2">Nomor Telepon</label>
+          <input type="number" id="nomor" name="nomor" placeholder="Masukkan nomor telepon"
+            class="w-full p-3 border border-indigo-300 rounded-lg focus:outline-none focus:ring-4 focus:ring-indigo-200 transition">
+          <p id="nomor_error" class="text-red-500"></p>
+        </div>
+
+        <!-- Input Tanggal -->
+        <div>
+          <label for="tanggal" class="block text-indigo-700 font-semibold mb-2">Pilih Tanggal</label>
+          <input type="date" id="tanggal" name="tanggal"
+            class="w-full p-3 border border-indigo-300 rounded-lg focus:outline-none focus:ring-4 focus:ring-indigo-200 transition">
+        </div>
+
+        <!-- Input Waktu -->
+        <div>
+          <label for="waktu" class="block text-indigo-700 font-semibold mb-2">Pilih Waktu</label>
+          <input type="time" id="waktu" name="waktu"
+            class="w-full p-3 border border-indigo-300 rounded-lg focus:outline-none focus:ring-4 focus:ring-indigo-200 transition">
+        </div>
+
+        <!-- Input Text Chat -->
+        <div>
+          <label for="chat" class="block text-indigo-700 font-semibold mb-2">Masukan Text Chat</label>
+          <textarea name="chat" id="chat" rows="4" placeholder="Tulis pesan Anda di sini..."
+            class="w-full p-3 border border-indigo-300 rounded-lg focus:outline-none focus:ring-4 focus:ring-indigo-200 transition resize-none"></textarea>
+        </div>
+
+        <!-- Tombol Kirim -->
+        <button type="button" id="tombol" onclick="kirimWA()"
+          class="w-full bg-indigo-600 text-white font-semibold py-3 rounded-lg shadow hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-200 transition">
+          Kirim
+        </button>
+      </form>
+    </div>
+  </main>
+
+
+  <!-- Footer (Optional) -->
+  <footer class="bg-white shadow mt-8">
+    <div class="container mx-auto px-4 py-4 text-center text-gray-600">
+      &copy; 2024 Chatbot API. All rights reserved.
+    </div>
+  </footer>
+
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+  <!-- JavaScript for Mobile Menu -->
+  <script>
+    const button = document.getElementById('mobile-menu-button');
+    const menu = document.getElementById('mobile-menu');
+
+    button.addEventListener('click', () => {
+      menu.classList.toggle('hidden');
+    });
+  </script>
+
+  <!-- JavaScript for Kirim WA -->
+  <script>
+    $(document).ready(function () {
+      // Mengatur tanggal minimum ke hari ini
+      const today = new Date();
+      const todayISO = today.toISOString().split('T')[0]; // Format YYYY-MM-DD
+      $('#tanggal').attr('min', todayISO); // Set min untuk input tanggal
+
+      // Mengatur waktu minimum
+      function setTimeMin() {
+        const now = new Date();
+        const hours = now.getHours();
+        const minutes = now.getMinutes();
+        const minTime = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+        $('#waktu').attr('min', minTime); // Set min untuk input waktu
+      }
+
+      // Event listener untuk input tanggal
+      $('#tanggal').on('change', function () {
+        const selectedDate = new Date(this.value);
+        const now = new Date();
+
+        // Jika tanggal yang dipilih adalah hari ini, set waktu minimum ke waktu saat ini
+        if (selectedDate.toDateString() === now.toDateString()) {
+          setTimeMin();
+        } else {
+          $('#waktu').attr('min', '00:00'); // Jika tidak, reset waktu minimum ke 00:00
+        }
+      });
+
+      // Set waktu minimum saat halaman dimuat
+      setTimeMin();
+    });
+
+
+    function kirimWA() {
+      let nomor = $('#nomor').val();
+      console.log(nomor)
+      if (nomor == '') {
+        $('#nomor_error').html('Nomor harus diisi')
+        return
+      } else {
+        $('#nomor_error').html('')
+      }
+
+      $.ajax({
+        url: "proses.php?kirimkan=true",
+        type: "GET",
+        data: {
+          text: $('#chat').val(),
+          nomor: nomor,
+          tanggal: $('#tanggal').val(),
+          waktu: $('#waktu').val(),
+
+        },
+        success: function (msg) {
+          console.log(msg);
+          const response = JSON.parse(msg);
+          if (response.status == true) {
+            alert(response.status + " : " + response.detail); // Menampilkan detail dalam alert
+          } else {
+            alert(response.status + ": " + response.reason);
+          }
+
+        }
+      });
+      $('#chat').val(''); // Mengosongkan input chat setelah mengirim
+    }
+
+  </script>
+
+</body>
+
+</html>
