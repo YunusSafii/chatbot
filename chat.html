@@ -157,38 +157,69 @@
     });
 
 
-    function kirimWA() {
+    async function kirimWA() {
       let nomor = $('#nomor').val();
-      console.log(nomor)
+      let text = $('#chat').val();
+      let tanggal = $('#tanggal').val();
+      let waktu = $('#waktu').val();
+
+      // Validasi nomor
       if (nomor == '') {
-        $('#nomor_error').html('Nomor harus diisi')
-        return
+        $('#nomor_error').html('Nomor harus diisi');
+        return;
       } else {
-        $('#nomor_error').html('')
+        $('#nomor_error').html('');
       }
 
-      $.ajax({
-        url: "proses.php?kirimkan=true",
-        type: "GET",
-        data: {
-          text: $('#chat').val(),
-          nomor: nomor,
-          tanggal: $('#tanggal').val(),
-          waktu: $('#waktu').val(),
+      // Membuat pesan
+      let pesan = text + "\n\npesan ini dikirim melalui chat bot jangan berikan data pribadi anda. jika ingin mencoba chatbot kunjungi link berikut";
 
-        },
-        success: function (msg) {
-          console.log(msg);
-          const response = JSON.parse(msg);
-          if (response.status == true) {
-            alert(response.status + " : " + response.detail); // Menampilkan detail dalam alert
-          } else {
-            alert(response.status + ": " + response.reason);
+      // Menghitung jadwal pengiriman (jika ada)
+      let jadwal = 0;
+      if (tanggal !== '' && waktu !== '') {
+        let datetimeString = tanggal + ' ' + waktu;
+        let timezone = '+0700';
+        let datetimeStringWithTimezone = datetimeString + timezone;
+        jadwal = Math.floor(new Date(datetimeStringWithTimezone).getTime() / 1000);
+      }
+
+      // Menyiapkan data yang akan dikirim
+      let data = new FormData();
+      data.append('target', nomor);
+      data.append('message', pesan);
+      data.append('url', 'https://md.fonnte.com/images/wa-logo.png');
+      data.append('filename', 'filename');
+      data.append('schedule', jadwal);
+      data.append('typing', 'false');
+      data.append('delay', '2');
+      data.append('countryCode', '62');
+      data.append('followup', '0');
+
+      try {
+        // Mengirim permintaan POST menggunakan fetch API
+        let response = await fetch('https://api.fonnte.com/send', {
+          method: 'POST',
+          body: data,
+          headers: {
+            'Authorization': 'xFkZ7PB87i8NML7wjqxR'
           }
+        });
 
+        let result = await response.json();
+
+        // Menampilkan hasil
+        if (result.status === true) {
+          alert(result.status + " : " + result.detail); // Menampilkan detail dalam alert
+        } else {
+          alert(result.status + ": " + result.reason);
         }
-      });
-      $('#chat').val(''); // Mengosongkan input chat setelah mengirim
+      } catch (error) {
+        console.error('Error:', error);
+        alert('Terjadi kesalahan saat mengirim pesan.');
+      }
+
+      // Mengosongkan input chat setelah mengirim
+      $('#chat').val('');
     }
 
   </script>
